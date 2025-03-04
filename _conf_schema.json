@@ -1,0 +1,17 @@
+{
+    "url": {
+        "description": "青龙面板地址",
+        "type": "string",
+        "hint": "请输入青龙面板的URL地址，例如：http://localhost:5700"
+    },
+    "client_id": {
+        "description": "应用 ID",
+        "type": "string",
+        "hint": "请输入青龙面板应用的 Client ID"
+    },
+    "client_secret": {
+        "description": "应用密钥",
+        "type": "string",
+        "hint": "请输入青龙面板应用的 Client Secret"
+    }
+}
