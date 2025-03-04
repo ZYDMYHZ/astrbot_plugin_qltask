@@ -239,6 +239,13 @@ class MyPlugin(Star):
     @filter.command("qltask log")
     async def show_cron_log(self, event: AstrMessageEvent):
         '''查看指定任务的日志'''
+        func_tools_mgr = self.context.get_llm_tool_manager()
+        curr_cid = await self.context.conversation_manager.get_curr_conversation_id(event.unified_msg_origin) # 当前用户所处对话的对话id，是一个 uuid。
+        conversation = None # 对话对象
+        context = [] # 上下文列表
+        if curr_cid:
+            conversation = await self.context.conversation_manager.get_conversation(event.unified_msg_origin, curr_cid)
+            context = json.loads(conversation.history)
         # 从消息链中获取文本内容
         message_chain = event.message_obj.message
         logger.info(f"消息链: {message_chain}")
@@ -262,12 +269,23 @@ class MyPlugin(Star):
             yield event.plain_result("该任务暂无日志")
             return
             
-        # 如果日志内容太长，只显示最后1000个字符
-        if len(log_content) > 2000: 
-            log_content = "...\n" + log_content[-2000:]
+        # # 如果日志内容太长，只显示最后1000个字符
+        # if len(log_content) > 2000: 
+        #     log_content = "...\n" + log_content[-2000:]
             
-        result = f"=== 任务 {args} 的日志 ===\n\n{log_content}"
-        yield event.plain_result(result)
+        # result = f"=== 任务 {args} 的日志 ===\n\n{log_content}"
+        # yield event.plain_result(result)
+
+        yield event.request_llm(
+            prompt="请根据以下日志内容，提取有效信息" + log_content,
+            func_tool_manager=func_tools_mgr,
+            session_id=curr_cid, # 对话id。如果指定了对话id，将会记录对话到数据库
+            contexts=context, # 列表。如果不为空，将会使用此上下文与 LLM 对话。
+            system_prompt="",
+            image_urls=[], # 图片链接，支持路径和网络链接
+            conversation=conversation # 如果指定了对话，将会记录对话
+        )
+        
 
     async def run_cron(self, cron_id: str) -> bool:
         """执行指定的定时任务"""
